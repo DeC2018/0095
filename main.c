@@ -2,114 +2,149 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Definition for a binary tree node.
 struct TreeNode {
     int val;
-    struct TreeNode* left;
-    struct TreeNode* right;
+    struct TreeNode *left;
+    struct TreeNode *right;
 };
 
-// Helper function to calculate factorial (used for memory allocation size)
-int size(int n){
-    if(n==1){
-        return 1;
+// Функция для вычисления каталанских чисел
+int catalan(int n) {
+    if (n <= 1) return 1;
+    int res = 0;
+    for (int i = 0; i < n; i++)
+        res += catalan(i) * catalan(n - i - 1);
+    return res;
+}
+
+// Функция для создания нового узла
+struct TreeNode* newNode(int val) {
+    struct TreeNode* node = (struct TreeNode*)malloc(sizeof(struct TreeNode));
+    node->val = val;
+    node->left = NULL;
+    node->right = NULL;
+    return node;
+}
+
+// Основная рекурсивная функция генерации деревьев
+struct TreeNode** generateTreesHelper(int start, int end, int* returnSize) {
+    *returnSize = 0;
+    if (start > end) {
+        struct TreeNode** result = (struct TreeNode**)malloc(sizeof(struct TreeNode*));
+        result[0] = NULL;
+        *returnSize = 1;
+        return result;
     }
-    else{
-        return n*size(n-1);
+
+    int max_size = catalan(end - start + 1);
+    struct TreeNode** result = (struct TreeNode**)malloc(sizeof(struct TreeNode*) * max_size);
+
+    for (int i = start; i <= end; i++) {
+        int leftSize, rightSize;
+        struct TreeNode** leftTrees = generateTreesHelper(start, i - 1, &leftSize);
+        struct TreeNode** rightTrees = generateTreesHelper(i + 1, end, &rightSize);
+
+        for (int j = 0; j < leftSize; j++) {
+            for (int k = 0; k < rightSize; k++) {
+                struct TreeNode* root = newNode(i);
+                root->left = leftTrees[j];
+                root->right = rightTrees[k];
+                result[(*returnSize)++] = root;
+            }
+        }
+
+        free(leftTrees);
+        free(rightTrees);
+    }
+
+    return result;
+}
+
+// Основная функция генерации деревьев
+struct TreeNode** generateTrees(int n, int* returnSize) {
+    if (n == 0) {
+        *returnSize = 0;
+        return NULL;
+    }
+    return generateTreesHelper(1, n, returnSize);
+}
+
+// Функция для сериализации дерева
+void serializeTree(struct TreeNode* root, char* buffer, int* pos) {
+    if (!root) {
+        strcpy(buffer + *pos, "null");
+        *pos += 4;
+        return;
+    }
+
+    *pos += sprintf(buffer + *pos, "%d", root->val);
+
+    if (root->left || root->right) {
+        buffer[(*pos)++] = ',';
+        serializeTree(root->left, buffer, pos);
+        buffer[(*pos)++] = ',';
+        serializeTree(root->right, buffer, pos);
     }
 }
 
-// Helper function to copy a tree
-struct TreeNode* cpy(struct TreeNode* node,struct TreeNode* new){
-    new->val=node->val;
-    if(node->left!=NULL){
-        new->left=(struct TreeNode*)malloc(sizeof(struct TreeNode));
-        cpy(node->left,new->left);
+// Функция для форматирования вывода
+void formatOutput(char* buffer) {
+    int len = strlen(buffer);
+    while (len >= 4 && strcmp(buffer + len - 4, "null") == 0) {
+        len -= 4;
+        if (len > 0 && buffer[len-1] == ',') len--;
+        buffer[len] = '\0';
     }
-    else{
-        new->left=NULL;
-    }
-    if(node->right!=NULL){
-        new->right=(struct TreeNode*)malloc(sizeof(struct TreeNode));
-        cpy(node->right,new->right);
-    }
-    else{
-        new->right=NULL;
-    }
-    return new;
 }
 
-// Helper function to insert a new root node
-struct TreeNode* inserttop(struct TreeNode* node,int num){
-    struct TreeNode* new=(struct TreeNode*)malloc(sizeof(struct TreeNode));
-    new->val=num;
-    new->left=node;
-    new->right=NULL;
-    return new;
+// Функция для печати результата
+void printResult(struct TreeNode** trees, int count) {
+    printf("[");
+    for (int i = 0; i < count; i++) {
+        printf("[");
+        char buffer[1000] = {0};
+        int pos = 0;
+        serializeTree(trees[i], buffer, &pos);
+        formatOutput(buffer);
+        printf("%s", buffer);
+        printf("]");
+        if (i < count - 1) printf(",");
+    }
+    printf("]\n");
 }
 
-// Helper function to insert a node to the right
-void insertright(struct TreeNode* node,struct TreeNode* head,struct TreeNode ***ans,int i,int *tmpsize){
-    struct TreeNode* new=(struct TreeNode*)malloc(sizeof(struct TreeNode));
-    struct TreeNode* copy=(struct TreeNode*)malloc(sizeof(struct TreeNode));
-    copy->left=NULL;
-    copy->right=NULL; 
-    if(node->right!=NULL){
-        new->left=node->right;
-        new->right=NULL;
-        new->val=i;
-        node->right=new;
-        ans[i][(*tmpsize)++]=cpy(head,copy);
-        node->right=new->left;
-        insertright(node->right,head,ans,i,tmpsize);
-    }
-    else{
-        node->right=new;
-        new->val=i;
-        new->right=NULL;
-        new->left=NULL;
-        ans[i][(*tmpsize)++]=cpy(head,copy);
-        node->right=NULL;
-    }
-    return;
+// Функция для освобождения памяти
+void freeTree(struct TreeNode* root) {
+    if (!root) return;
+    freeTree(root->left);
+    freeTree(root->right);
+    free(root);
 }
 
-// Helper function to generate trees for a given number of nodes
-void func(struct TreeNode ***ans,int i,int *tmpsize,int lastsize){
-    for(int j=0;j<lastsize;j++){
-        ans[i][(*tmpsize)++]=inserttop(ans[i-1][j],i);
-        insertright(ans[i-1][j],ans[i-1][j],ans,i,tmpsize);
+int main() {
+    int returnSize;
+    
+    printf("Input: n = 3\n");
+    struct TreeNode** trees3 = generateTrees(3, &returnSize);
+    printf("Output: ");
+    printResult(trees3, returnSize);
+    
+    // Освобождаем память
+    for (int i = 0; i < returnSize; i++) {
+        freeTree(trees3[i]);
     }
-    return;
-}
+    free(trees3);
 
-// Main function to generate all unique BSTs
-struct TreeNode** generateTrees(int n, int* returnSize){
-    struct TreeNode ***ans=(struct TreeNode***)malloc(sizeof(struct TreeNode**)*(n+1));
-    ans[0]=NULL;
-    for(int i=1;i<=n;i++){
-        ans[i]=(struct TreeNode**)malloc(sizeof(struct TreeNode*)*size(i));
+    printf("Input: n = 1\n");
+    struct TreeNode** trees1 = generateTrees(1, &returnSize);
+    printf("Output: ");
+    printResult(trees1, returnSize);
+    
+    // Освобождаем память
+    for (int i = 0; i < returnSize; i++) {
+        freeTree(trees1[i]);
     }
-    ans[1][0]=(struct TreeNode*)malloc(sizeof(struct TreeNode));
-    ans[1][0]->val=1;
-    ans[1][0]->left=NULL;
-    ans[1][0]->right=NULL;
-    if(n==1){
-        *returnSize=1;
-        return ans[1];
-    }
-    int *tmpsize=(int *)malloc(sizeof(int));
-    int lastsize=1;
-    for(int i=2;i<=n;i++){
-        *tmpsize=0;
-        func(ans,i,tmpsize,lastsize);
-        lastsize=*tmpsize;
-    }
-    *returnSize=lastsize;
-    struct TreeNode **final=(struct TreeNode**)malloc(sizeof(struct TreeNode*)*lastsize);
-    for(int i=0;i<lastsize;i++){
-        final[i]=(struct TreeNode*)malloc(sizeof(struct TreeNode));
-        final[i]=ans[n][i];
-    }
-    return final;
+    free(trees1);
+
+    return 0;
 }
