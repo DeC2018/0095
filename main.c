@@ -8,7 +8,6 @@ struct TreeNode {
     struct TreeNode *right;
 };
 
-// Функция для вычисления каталанских чисел
 int catalan(int n) {
     if (n <= 1) return 1;
     int res = 0;
@@ -17,7 +16,6 @@ int catalan(int n) {
     return res;
 }
 
-// Функция для создания нового узла
 struct TreeNode* newNode(int val) {
     struct TreeNode* node = (struct TreeNode*)malloc(sizeof(struct TreeNode));
     node->val = val;
@@ -26,7 +24,6 @@ struct TreeNode* newNode(int val) {
     return node;
 }
 
-// Основная рекурсивная функция генерации деревьев
 struct TreeNode** generateTreesHelper(int start, int end, int* returnSize) {
     *returnSize = 0;
     if (start > end) {
@@ -60,7 +57,6 @@ struct TreeNode** generateTreesHelper(int start, int end, int* returnSize) {
     return result;
 }
 
-// Основная функция генерации деревьев
 struct TreeNode** generateTrees(int n, int* returnSize) {
     if (n == 0) {
         *returnSize = 0;
@@ -69,7 +65,6 @@ struct TreeNode** generateTrees(int n, int* returnSize) {
     return generateTreesHelper(1, n, returnSize);
 }
 
-// Функция для сериализации дерева
 void serializeTree(struct TreeNode* root, char* buffer, int* pos) {
     if (!root) {
         strcpy(buffer + *pos, "null");
@@ -87,7 +82,6 @@ void serializeTree(struct TreeNode* root, char* buffer, int* pos) {
     }
 }
 
-// Функция для форматирования вывода
 void formatOutput(char* buffer) {
     int len = strlen(buffer);
     while (len >= 4 && strcmp(buffer + len - 4, "null") == 0) {
@@ -97,7 +91,6 @@ void formatOutput(char* buffer) {
     }
 }
 
-// Функция для печати результата
 void printResult(struct TreeNode** trees, int count) {
     printf("[");
     for (int i = 0; i < count; i++) {
@@ -113,7 +106,6 @@ void printResult(struct TreeNode** trees, int count) {
     printf("]\n");
 }
 
-// Функция для освобождения памяти
 void freeTree(struct TreeNode* root) {
     if (!root) return;
     freeTree(root->left);
@@ -129,7 +121,6 @@ int main() {
     printf("Output: ");
     printResult(trees3, returnSize);
     
-    // Освобождаем память
     for (int i = 0; i < returnSize; i++) {
         freeTree(trees3[i]);
     }
@@ -140,7 +131,6 @@ int main() {
     printf("Output: ");
     printResult(trees1, returnSize);
     
-    // Освобождаем память
     for (int i = 0; i < returnSize; i++) {
         freeTree(trees1[i]);
     }
